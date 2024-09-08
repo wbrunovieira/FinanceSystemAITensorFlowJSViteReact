@@ -805,48 +805,49 @@ const Main = () => {
         },
     };
     return (
-        <div>
-            <h1>Projeto Machine Learning com JavaScript</h1>
-            <h2>
-                Web App Para Previsão do Preço de Ações com Machine Learning e
-                Tensorflow.js
-            </h2>
-            <h3>
-                Modelo de IA com Arquitetura Recorrente LSTM (LSTM Long-Short
-                Term Memory)
-            </h3>
-            <h4>
-                Treinamento do Modelo e Previsões são feitos no navegador via
-                Tensorflow.js
-            </h4>
+        <div className="min-h-screen bg-gray-50 text-gray-800 p-4 sm:p-8">
+            <div className="max-w-5xl mx-auto">
+                <h1 className="text-3xl font-bold text-primary mb-4">
+                    Projeto Machine Learning com JavaScript
+                </h1>
+                <h2 className="text-xl text-secondary-light mb-2">
+                Previsão de Preços de Ações
+                </h2>
+                <h3 className="text-lg font-medium text-accent-dark mb-4">
+                Modelo LSTM Recorrente para Análise de Dados
+                </h3>
+                <h4 className="text-base text-gray-700 mb-6">
+                Treinamento e Previsões no Navegador
+                </h4>
 
-            <SymbolForm
-                symbol={symbol}
-                formError={formError}
-                onSymbolChange={handleSymbolChange}
-                onSubmit={getNewStock}
-            />
-            {series.length > 0 && (
-                <>
-                    <HighchartsReact
-                        highcharts={Highcharts}
-                        options={options}
-                        constructorType={"stockChart"}
-                    />
+                <SymbolForm
+                    symbol={symbol}
+                    formError={formError}
+                    onSymbolChange={handleSymbolChange}
+                    onSubmit={getNewStock}
+                />
+                {series.length > 0 && (
+                    <>
+                        <HighchartsReact
+                            highcharts={Highcharts}
+                            options={options}
+                            constructorType={"stockChart"}
+                        />
 
-                    <ModelControls
-                        recurrence={recurrence}
-                        isModelTraining={isModelTraining}
-                        isPredictionLoading={isPredictionLoading}
-                        strategy={strategy}
-                        modelResultTraining={modelResultTraining}
-                        setRecurrence={setRecurrence}
-                        setStrategy={setStrategy}
-                        createModel={createModel}
-                        makePredictions={makePredictions}
-                    />
-                </>
-            )}
+                        <ModelControls
+                            recurrence={recurrence}
+                            isModelTraining={isModelTraining}
+                            isPredictionLoading={isPredictionLoading}
+                            strategy={strategy}
+                            modelResultTraining={modelResultTraining}
+                            setRecurrence={setRecurrence}
+                            setStrategy={setStrategy}
+                            createModel={createModel}
+                            makePredictions={makePredictions}
+                        />
+                    </>
+                )}
+            </div>
         </div>
     );
 };
