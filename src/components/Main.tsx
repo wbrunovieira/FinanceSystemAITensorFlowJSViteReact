@@ -79,6 +79,9 @@ const Main = () => {
     const [recurrence, setRecurrence] = useState<number>(24);
     const [strategy, setStrategy] = useState<number>(2);
     const [isPredictionLoading, setIsPredictionLoading] = useState(false);
+    console.log('recurrence',recurrence)
+    console.log('isPredictionLoading',isPredictionLoading)
+    console.log('strategy',strategy)
 
     const epochs = 7;
     const timeserieSize = recurrence;

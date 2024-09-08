@@ -42,9 +42,14 @@ const ModelControls: React.FC<ModelControlsProps> = ({
                         }
                     }}
                 />
-                {typeof recurrence !== "number" && <span>Use somente números</span>}
+                {typeof recurrence !== "number" && (
+                    <span>Use somente números</span>
+                )}
                 {typeof recurrence === "number" && recurrence < 2 && (
-                    <span>Mínimo de 2 recorrências para normalizar entradas com média e desvio padrão</span>
+                    <span>
+                        Mínimo de 2 recorrências para normalizar entradas com
+                        média e desvio padrão
+                    </span>
                 )}
                 {typeof recurrence === "number" && recurrence > 32 && (
                     <span>Isso pode demorar um pouco. Seja paciente...</span>
@@ -53,6 +58,7 @@ const ModelControls: React.FC<ModelControlsProps> = ({
             <br />
             <br />
             <button
+                className="bg-primary hover:bg-secondary hover:text-white-50 px-4 py-2 rounded-lg"
                 onClick={createModel}
                 type="button"
                 disabled={isModelTraining || isPredictionLoading}
@@ -72,7 +78,11 @@ const ModelControls: React.FC<ModelControlsProps> = ({
             <br />
             <br />
             <input
-                disabled={isModelTraining || !modelResultTraining || isPredictionLoading}
+                disabled={
+                    isModelTraining ||
+                    !modelResultTraining ||
+                    isPredictionLoading
+                }
                 checked={strategy === 2}
                 type="radio"
                 id="Default"
@@ -81,12 +91,17 @@ const ModelControls: React.FC<ModelControlsProps> = ({
                 onChange={(event) => setStrategy(Number(event.target.value))}
             />
             <label htmlFor="Default">
-                Estratégia Padrão - A previsão no dia seguinte é maior que a previsão hoje (o inverso da ordem de venda)
+                Estratégia Padrão - A previsão no dia seguinte é maior que a
+                previsão hoje (o inverso da ordem de venda)
             </label>
             <br />
             <br />
             <input
-                disabled={isModelTraining || !modelResultTraining || isPredictionLoading}
+                disabled={
+                    isModelTraining ||
+                    !modelResultTraining ||
+                    isPredictionLoading
+                }
                 checked={strategy === 3}
                 type="radio"
                 id="classic"
@@ -95,12 +110,17 @@ const ModelControls: React.FC<ModelControlsProps> = ({
                 onChange={(event) => setStrategy(Number(event.target.value))}
             />
             <label htmlFor="classic">
-                Estratégia Clássica - A previsão do dia seguinte é maior que o valor real hoje (o inverso da ordem de venda)
+                Estratégia Clássica - A previsão do dia seguinte é maior que o
+                valor real hoje (o inverso da ordem de venda)
             </label>
             <br />
             <br />
             <input
-                disabled={isModelTraining || !modelResultTraining || isPredictionLoading}
+                disabled={
+                    isModelTraining ||
+                    !modelResultTraining ||
+                    isPredictionLoading
+                }
                 checked={strategy === 1}
                 type="radio"
                 id="secure"
@@ -109,7 +129,9 @@ const ModelControls: React.FC<ModelControlsProps> = ({
                 onChange={(event) => setStrategy(Number(event.target.value))}
             />
             <label htmlFor="secure">
-                Estratégia Segura - A previsão no dia seguinte é maior do que a previsão hoje e a previsão do dia seguinte é maior que o valor real hoje (o inverso da ordem de venda)
+                Estratégia Segura - A previsão no dia seguinte é maior do que a
+                previsão hoje e a previsão do dia seguinte é maior que o valor
+                real hoje (o inverso da ordem de venda)
             </label>
             <br />
             <br />
@@ -132,7 +154,10 @@ const ModelControls: React.FC<ModelControlsProps> = ({
             )}
             {isPredictionLoading && (
                 <p>
-                    <u>Por favor, mantenha o navegador aberto, as previsões estão carregando!</u>
+                    <u>
+                        Por favor, mantenha o navegador aberto, as previsões
+                        estão carregando!
+                    </u>
                 </p>
             )}
         </div>
