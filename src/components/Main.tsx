@@ -14,6 +14,9 @@ import * as tf from "@tensorflow/tfjs";
 import { SMA, RSI, stochastic, seasonality, EMA } from "../technicalindicators";
 import stockMarketDataDaily from "../../stockMarketDataDaily.json";
 
+import SymbolForm from "./SymbolForm";
+import ModelControls from "./ModelControls";
+
 interface StockData {
     [key: string]: {
         "1. open": string;
@@ -817,20 +820,12 @@ const Main = () => {
                 Tensorflow.js
             </h4>
 
-            <form onSubmit={getNewStock}>
-                <label>
-                    <span>Symbol : </span>
-                    <input
-                        type="text"
-                        name="symbol"
-                        placeholder="AAPL"
-                        onChange={handleSymbolChange}
-                        value={symbol}
-                    ></input>
-                </label>
-                <button type="submit">Obter Dados de Outra Empresa</button>
-            </form>
-            {formError && <p>{formError}</p>}
+            <SymbolForm
+                symbol={symbol}
+                formError={formError}
+                onSymbolChange={handleSymbolChange}
+                onSubmit={getNewStock}
+            />
             {series.length > 0 && (
                 <>
                     <HighchartsReact
@@ -839,312 +834,17 @@ const Main = () => {
                         constructorType={"stockChart"}
                     />
 
-                    <div style={{ margin: "10px 5px" }}>
-                        <label>
-                            <span>
-                                Defina quantos períodos são necessários para a
-                                rede neural detectar padrões recorrentes:
-                            </span>
-                            <input
-                                size={2}
-                                value={recurrence}
-                                disabled={
-                                    isModelTraining || isPredictionLoading
-                                }
-                                onChange={(event) => {
-                                    const value = Number(event.target.value);
-                                    if (!isNaN(value)) {
-                                        setRecurrence(value);
-                                    }
-                                }}
-                            />
-                            {typeof recurrence !== "number" && (
-                                <span>Use somente números</span>
-                            )}
-                            {typeof recurrence === "number" &&
-                                recurrence < 2 && (
-                                    <span>
-                                        Mínimo de 2 recorrências para normalizar
-                                        entradas com média e desvio padrão
-                                    </span>
-                                )}
-                            {typeof recurrence === "number" &&
-                                recurrence > 32 && (
-                                    <span>
-                                        Isso pode demorar um pouco. Seja
-                                        paciente...
-                                    </span>
-                                )}
-                        </label>
-                        <br />
-                        <br />
-                        <button
-                            onClick={createModel}
-                            type="button"
-                            disabled={isModelTraining || isPredictionLoading}
-                            style={{ fontSize: 16, marginRight: 5 }}
-                        >
-                            {isModelTraining
-                                ? "O Modelo Está Sendo Treinado! Aguarde!"
-                                : "Treinar e Validar o Modelo"}
-                        </button>
-                        <br />
-                        <br />
-                        <span>
-                            Defina a estratégia de previsão (você pode alterá-la
-                            a qualquer momento, mesmo quando o modelo tensorflow
-                            já estiver compilado, basta clicar em Faça Previsões
-                            novamente) :
-                        </span>
-                        <br />
-                        <br />
-                        <input
-                            disabled={
-                                isModelTraining ||
-                                !modelResultTraining ||
-                                isPredictionLoading
-                            }
-                            checked={strategy == 2}
-                            type="radio"
-                            id="Default"
-                            name="flag-strategy"
-                            value={2}
-                            onChange={(event) => {
-                                setStrategy(Number(event.target.value));
-                            }}
-                        />
-                        <label htmlFor="Default">
-                            Estratégia Padrão - A previsão no dia seguinte é
-                            maior que a previsão hoje (o inverso da ordem de
-                            venda)
-                        </label>
-                        <br />
-                        <br />
-                        <input
-                            disabled={
-                                isModelTraining ||
-                                !modelResultTraining ||
-                                isPredictionLoading ||
-                                true
-                            }
-                            checked={strategy == 3}
-                            type="radio"
-                            id="classic"
-                            name="flag-strategy"
-                            value={3}
-                            onChange={(event) => {
-                                setStrategy(Number(event.target.value));
-                            }}
-                        />
-                        <label htmlFor="classic">
-                            Estratégia Clássica - A previsão do dia seguinte é
-                            maior que o valor real hoje (o inverso da ordem de
-                            venda)
-                        </label>
-                        <br />
-                        <br />
-                        <input
-                            disabled={
-                                isModelTraining ||
-                                !modelResultTraining ||
-                                isPredictionLoading ||
-                                true
-                            }
-                            checked={strategy == 1}
-                            type="radio"
-                            id="secure"
-                            name="flag-strategy"
-                            value={1}
-                            onChange={(event) => {
-                                setStrategy(Number(event.target.value));
-                            }}
-                        />
-                        <label htmlFor="secure">
-                            Estratégia Segura - A previsão no dia seguinte é
-                            maior do que a previsão hoje e a previsão do dia
-                            seguinte é maior que o valor real hoje (o inverso da
-                            ordem de venda)
-                        </label>
-                        <br />
-                        <br />
-                        <button
-                            onClick={makePredictions}
-                            type="button"
-                            disabled={
-                                !modelResultTraining || isPredictionLoading
-                            }
-                            style={{ fontSize: 16, marginRight: 5 }}
-                        >
-                            Fazer Previsões
-                        </button>
-                        <br />
-                        {isModelTraining && (
-                            <p>
-                                <u>
-                                    Por favor, mantenha o navegador aberto e
-                                    deixe seu computador fazer o trabalho!
-                                </u>
-                            </p>
-                        )}
-                        {isPredictionLoading && (
-                            <p>
-                                <u>
-                                    Por favor, mantenha o navegador aberto, as
-                                    previsões estão carregando!
-                                </u>
-                            </p>
-                        )}
-                        {modelLogs.length > 0 && (
-                            <>
-                                {investing.end ? (
-                                    <p>{`Você investiu $${
-                                        investing.start
-                                    } e receberá como retorno um total de $${Math.round(
-                                        investing.end
-                                    )}`}</p>
-                                ) : (
-                                    <p>{`Você está investindo $${investing.start}. Aguarde o término do treinamento do modelo e clique em Fazer Previsões!`}</p>
-                                )}
-
-                                <HighchartsReact
-                                    highcharts={Highcharts}
-                                    options={options2}
-                                    constructorType={"chart"}
-                                />
-                            </>
-                        )}
-                        <p>
-                            Os indicadores financeiros utilizados são os
-                            seguintes:
-                        </p>
-                        <ul>
-                            <li>Close value</li>
-                            <li>Open value</li>
-                            <li>Daily high value</li>
-                            <li>Daily low value</li>
-                            <li>Daily volume</li>
-                            <li>
-                                EMA10 (Exponential Moving Average 10 periods)
-                            </li>
-                            <li>
-                                EMA20 (Exponential Moving Average 20 periods)
-                            </li>
-                            <li>
-                                EMA50 (Exponential Moving Average 50 periods)
-                            </li>
-                            <li>SMA10 (Simple Moving Average 10 periods)</li>
-                            <li>SMA20 (Simple Moving Average 20 periods)</li>
-                            <li>SMA50 (Simple Moving Average 50 periods)</li>
-                            <li>SMA100 (Simple Moving Average 100 periods)</li>
-                            <li>RSI7 (Relative Strength Index 7 periods)</li>
-                            <li>RSI14 (Relative Strength Index 14 periods)</li>
-                            <li>RSI28 (Relative Strength Index 28 periods)</li>
-                            <li>Stochastic7 (last 7 periods)</li>
-                            <li>Stochastic14 (last 14 periods)</li>
-                        </ul>
-                        <p>
-                            {`Usamos períodos (80%, 10%, 10%) divididos por lote de ${batchSize} para treinamento, validação,
-               e conjunto de teste.`}
-                        </p>
-                        <ul>
-                            <li>
-                                Para treinamento e validação do modelo usamos
-                                dados de treinamento e validação com proporção
-                                80% e 10% respectivamente.
-                            </li>
-                            <li>
-                                {`Para o botão Fazer Previsões usamos o conjunto de teste (10%). Para cada dia (todo dia) nós
-                prevemos o valor do dia seguinte com a última sequência de ${timeserieSize} períodos (pode ser necessário fazer zoom o gráfico).`}
-                            </li>
-                        </ul>
-                        {sampleData && (
-                            <>
-                                <br />
-                                <p>Resumo estatístico dos dados:</p>
-                                <table border={1}>
-                                    <thead>
-                                        <tr>
-                                            <th>min</th>
-                                            <th>max</th>
-                                            <th>mean</th>
-                                            <th>std</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {Object.entries(
-                                            sampleData.sampleDimensionParams as Record<
-                                                string,
-                                                {
-                                                    min: number;
-                                                    max: number;
-                                                    mean: number;
-                                                    std: number;
-                                                }
-                                            >
-                                        ).map((e1, i1) => (
-                                            <tr
-                                                key={`sampleDimensionParams-row-${i1}`}
-                                            >
-                                                {Object.values(e1[1]).map(
-                                                    (e2, i2) => (
-                                                        <td
-                                                            key={`sampleDimensionParams-column-${i2}`}
-                                                        >
-                                                            {e2}
-                                                        </td>
-                                                    )
-                                                )}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                <p>
-                                    Amostra dos dados brutos com os indicadores
-                                    financeiros utilizados:
-                                </p>
-                                <table border={1}>
-                                    <thead>
-                                        <tr>
-                                            <th>Close value</th>
-                                            <th>Open value</th>
-                                            <th>High</th>
-                                            <th>Low</th>
-                                            <th>Volume</th>
-                                            <th>EMA10</th>
-                                            <th>EMA20</th>
-                                            <th>EMA50</th>
-                                            <th>SMA10</th>
-                                            <th>SMA20</th>
-                                            <th>SMA50</th>
-                                            <th>SMA100</th>
-                                            <th>RSI7</th>
-                                            <th>RSI14</th>
-                                            <th>RSI28</th>
-                                            <th>Stochastic7</th>
-                                            <th>Stochastic14</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {sampleData.sampleDataRaw.map(
-                                            (e1: number[], i1: number) => (
-                                                <tr
-                                                    key={`sampleDataRaw-row-${i1}`}
-                                                >
-                                                    {e1.map((e2, i2) => (
-                                                        <td
-                                                            key={`sampleDataRaw-column-${i2}`}
-                                                        >
-                                                            {e2}
-                                                        </td>
-                                                    ))}
-                                                </tr>
-                                            )
-                                        )}
-                                    </tbody>
-                                </table>
-                            </>
-                        )}
-                    </div>
+                    <ModelControls
+                        recurrence={recurrence}
+                        isModelTraining={isModelTraining}
+                        isPredictionLoading={isPredictionLoading}
+                        strategy={strategy}
+                        modelResultTraining={modelResultTraining}
+                        setRecurrence={setRecurrence}
+                        setStrategy={setStrategy}
+                        createModel={createModel}
+                        makePredictions={makePredictions}
+                    />
                 </>
             )}
         </div>
