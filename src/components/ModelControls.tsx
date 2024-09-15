@@ -58,7 +58,7 @@ const ModelControls: React.FC<ModelControlsProps> = ({
             <br />
             <br />
             <button
-                className="bg-primary hover:bg-secondary hover:text-white-50 px-4 py-2 rounded-lg"
+                className="bg-primary hover:bg-secondary text-white hover:scale-105 px-4 py-2 rounded-lg"
                 onClick={createModel}
                 type="button"
                 disabled={isModelTraining || isPredictionLoading}
@@ -139,6 +139,7 @@ const ModelControls: React.FC<ModelControlsProps> = ({
                 onClick={makePredictions}
                 type="button"
                 disabled={!modelResultTraining || isPredictionLoading}
+                className="bg-secondary text-white px-4 py-2 rounded-lg text-xs hover:scale-105"
                 style={{ fontSize: 16, marginRight: 5 }}
             >
                 Fazer Previsões

@@ -16,6 +16,7 @@ import stockMarketDataDaily from "../../stockMarketDataDaily.json";
 
 import SymbolForm from "./SymbolForm";
 import ModelControls from "./ModelControls";
+import TrainingFeedback from "./TrainingFeedback";
 
 interface StockData {
     [key: string]: {
@@ -79,11 +80,15 @@ const Main = () => {
     const [recurrence, setRecurrence] = useState<number>(24);
     const [strategy, setStrategy] = useState<number>(2);
     const [isPredictionLoading, setIsPredictionLoading] = useState(false);
-    console.log('recurrence',recurrence)
-    console.log('isPredictionLoading',isPredictionLoading)
-    console.log('strategy',strategy)
+    const [trainingError, setTrainingError] = useState<string | null>(null);
+    const [currentEpoch, setCurrentEpoch] = useState(0);
+    const [currentLoss, setCurrentLoss] = useState<number | null>(null);
+    console.log("recurrence", recurrence);
+    console.log("isPredictionLoading", isPredictionLoading);
+    console.log("strategy", strategy);
 
     const epochs = 7;
+    const [totalEpochs, setTotalEpochs] = useState(epochs);
     const timeserieSize = recurrence;
     const batchSize = 32;
 
@@ -527,6 +532,9 @@ const Main = () => {
             rebootSeries();
             setIsModelTraining(true);
             setModelResultTraining(null);
+            setTrainingError(null); // Limpa erros anteriores
+            setCurrentEpoch(0); // Reinicia o contador de épocas
+
             const { dataset: train } = await makeDataset([0, 0.7]);
             const { dataset: validate } = await makeDataset([0.7, 0.9]);
 
@@ -547,39 +555,41 @@ const Main = () => {
                 })
             );
 
-            model.add(
-                tf.layers.dense({
-                    units: 1,
-                })
-            );
+            model.add(tf.layers.dense({ units: 1 }));
 
             model.compile({
                 optimizer: "adam",
                 loss: "meanSquaredError",
                 metrics: ["accuracy"],
             });
+
             setModelLogs([]);
             modelLogsRef.current = [];
-            const history = await model.fitDataset(train, {
+
+            await model.fitDataset(train, {
                 epochs,
                 validationData: validate,
                 callbacks: {
                     onEpochEnd: (epoch: number, log: tf.Logs | undefined) => {
                         if (log && log.loss !== undefined) {
+                            console.log(
+                                `Epoch ${epoch + 1}, Loss: ${log.loss}`
+                            );
                             modelLogsRef.current.push([epoch + 1, log.loss]);
                             setModelLogs([...modelLogsRef.current]);
+
+                          
+                            setCurrentEpoch(epoch + 1);
+                            setCurrentLoss(log.loss);
                         }
                     },
                 },
             });
-            const result = {
-                model: model,
-                stats: history,
-            };
 
-            setModelResultTraining(result);
-        } catch (error) {
-            throw error;
+            setModelResultTraining({ model, stats: modelLogsRef.current });
+        } catch (error: any) {
+            console.error("Erro durante o treinamento:", error);
+            setTrainingError(error?.message); 
         } finally {
             setIsModelTraining(false);
         }
@@ -600,7 +610,7 @@ const Main = () => {
 
     const makePredictions = async () => {
         setIsPredictionLoading(true);
-        await new Promise((r) => setTimeout(r, 300));
+        await new Promise((r) => setTimeout(r, 3000));
         try {
             const newSeries = rebootSeries();
             const xs = splitData([0.9, 1]);
@@ -814,13 +824,21 @@ const Main = () => {
                     Projeto Machine Learning com JavaScript
                 </h1>
                 <h2 className="text-xl text-secondary-light mb-2">
-                Previsão de Preços de Ações
+                    Previsão de Preços de Ações
                 </h2>
+                {/* Componente de Feedback */}
+                <TrainingFeedback
+                    currentEpoch={currentEpoch}
+                    totalEpochs={totalEpochs}
+                    currentLoss={currentLoss}
+                    error={trainingError}
+                    isTraining={isModelTraining}
+                />
                 <h3 className="text-lg font-medium text-accent-dark mb-4">
-                Modelo LSTM Recorrente para Análise de Dados
+                    Modelo LSTM Recorrente para Análise de Dados
                 </h3>
                 <h4 className="text-base text-gray-700 mb-6">
-                Treinamento e Previsões no Navegador
+                    Treinamento e Previsões no Navegador
                 </h4>
 
                 <SymbolForm
