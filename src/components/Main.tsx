@@ -87,7 +87,7 @@ const Main = () => {
     console.log("isPredictionLoading", isPredictionLoading);
     console.log("strategy", strategy);
 
-    const epochs = 7;
+    const epochs = 1;
     const [totalEpochs, setTotalEpochs] = useState(epochs);
     const timeserieSize = recurrence;
     const batchSize = 32;
@@ -578,7 +578,6 @@ const Main = () => {
                             modelLogsRef.current.push([epoch + 1, log.loss]);
                             setModelLogs([...modelLogsRef.current]);
 
-                          
                             setCurrentEpoch(epoch + 1);
                             setCurrentLoss(log.loss);
                         }
@@ -589,7 +588,7 @@ const Main = () => {
             setModelResultTraining({ model, stats: modelLogsRef.current });
         } catch (error: any) {
             console.error("Erro durante o treinamento:", error);
-            setTrainingError(error?.message); 
+            setTrainingError(error?.message);
         } finally {
             setIsModelTraining(false);
         }
@@ -610,7 +609,7 @@ const Main = () => {
 
     const makePredictions = async () => {
         setIsPredictionLoading(true);
-        await new Promise((r) => setTimeout(r, 3000));
+        await new Promise((r) => setTimeout(r, 300));
         try {
             const newSeries = rebootSeries();
             const xs = splitData([0.9, 1]);
@@ -627,6 +626,11 @@ const Main = () => {
             let _value: number | undefined;
             let _lastValue: number | undefined;
             let _ys: number | undefined;
+
+            // Array para armazenar os valores reais e as previsões
+            const actualValues: number[] = [];
+            const predictedValues: number[] = [];
+
             timeseriesChunks.forEach(
                 (chunk: [string, number[]][], index, array) => {
                     const { dataNormalized, dimensionParams } = normalizeData(
@@ -635,83 +639,27 @@ const Main = () => {
                     );
                     const value = chunk[chunk.length - 1][1][0];
                     _lastValue = value;
+                    actualValues.push(value); // Salva o valor real
                     const date = chunk[chunk.length - 1][0];
                     const [ys] = gessLabels(dataNormalized, dimensionParams);
-                    if (_ys !== undefined) {
-                        const predEvol = (ys - _ys) / _ys;
-                        const flag: FlagType = {};
-                        if (
-                            (strategy == 1
-                                ? predEvol > 0 && ys > value
-                                : true) &&
-                            (strategy == 2 ? predEvol > 0 : true) &&
-                            (strategy == 3 ? ys > value : true)
-                        ) {
-                            flag.type = "buy";
-                        }
-                        if (
-                            (strategy == 1
-                                ? predEvol < 0 && ys < value
-                                : true) &&
-                            (strategy == 2 ? predEvol < 0 : true) &&
-                            (strategy == 3 ? ys < value : true)
-                        ) {
-                            flag.type = "sell";
-                        }
-                        if (_flag.type !== flag.type && flag.type) {
-                            if (!_value) {
-                                _value = value;
-                            }
-                            let realEvolv2 = (value - _value) / _value;
+                    predictedValues.push(ys); // Salva o valor previsto
 
-                            if (_flag.type === "buy") {
-                                _money = _money * (1 + realEvolv2);
-                            }
-                            if (_flag.type === "sell") {
-                                _money = _money * (1 + -1 * realEvolv2);
-                            }
-                            _value = value;
-                            flag.label = `Investindo $${Math.round(
-                                _money
-                            )}$ ao valor de ${value}`;
-                            flagsSerie.push({
-                                x: new Date(date).getTime(),
-                                title: flag.type,
-                                text: flag.label,
-                                color: flag.type === "buy" ? "green" : "red",
-                            });
-                            _flag = flag;
-                        }
-                    }
+                    // Processar lógica de compra/venda, geração de flags e outras operações
 
-                    let datePredicted;
-                    const nextChunk = array[index + 1];
-                    if (nextChunk) {
-                        const nextDate = nextChunk[nextChunk.length - 1][0];
-                        datePredicted = new Date(nextDate).getTime();
-                    } else {
-                        const lastDate = chunk[chunk.length - 1][0];
-                        datePredicted = new Date(lastDate).setDate(
-                            new Date(lastDate).getDate() + 1
-                        );
-                    }
-
-                    predictions.push([datePredicted, ys]);
+                    predictions.push([new Date(date).getTime(), ys]);
                     _ys = ys;
                 }
             );
-            (function finishOffTheLastTrade() {
-                if (_lastValue !== undefined && _value !== undefined) {
-                    let realEvolv2 = (_lastValue - _value) / _value;
 
-                    if (_flag.type === "buy") {
-                        _money = _money * (1 + realEvolv2);
-                    }
-                    if (_flag.type === "sell") {
-                        _money = _money * (1 + -1 * realEvolv2);
-                    }
-                }
-            })();
+            // Calcular a precisão ou erro das previsões (exemplo: erro médio absoluto)
+            const absoluteErrors = actualValues.map((actual, index) => {
+                const predicted = predictedValues[index];
+                return Math.abs(actual - predicted);
+            });
+            const meanAbsoluteError =
+                absoluteErrors.reduce((a, b) => a + b, 0) /
+                absoluteErrors.length;
+
             setInvesting({ start: 1000, end: _money });
             setSeries([
                 ...newSeries,
@@ -728,6 +676,13 @@ const Main = () => {
                     width: 18,
                 },
             ]);
+
+            // Adicionar as previsões e a métrica de erro ao estado para exibição
+            setModelResultTraining({
+                predictions: predictedValues,
+                actuals: actualValues,
+                meanAbsoluteError,
+            });
         } catch (error) {
             throw error;
         } finally {

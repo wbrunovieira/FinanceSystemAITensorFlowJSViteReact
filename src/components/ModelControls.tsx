@@ -1,4 +1,4 @@
-// ModelControls.tsx
+
 import React from "react";
 
 interface ModelControlsProps {
@@ -145,6 +145,29 @@ const ModelControls: React.FC<ModelControlsProps> = ({
                 Fazer Previsões
             </button>
             <br />
+
+            {modelResultTraining && modelResultTraining.predictions && (
+                <div>
+                    <h3>Resultados das Previsões:</h3>
+                    <p>
+                        Média do Erro Absoluto (MAE):{" "}
+                        {modelResultTraining.meanAbsoluteError.toFixed(4)}
+                    </p>
+                    <h4>Valores Reais vs Previstos:</h4>
+                    <ul>
+                        {modelResultTraining.actuals.map(
+                            (actual: number, index: number) => (
+                                <li key={index}>
+                                    Real: {actual.toFixed(2)} - Previsto:{" "}
+                                    {modelResultTraining.predictions[
+                                        index
+                                    ].toFixed(2)}
+                                </li>
+                            )
+                        )}
+                    </ul>
+                </div>
+            )}
             {isModelTraining && (
                 <p>
                     <u>
